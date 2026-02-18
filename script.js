@@ -17,19 +17,29 @@ function displayProducts() {
   let htmlContent = "";
 
   inventory.forEach((item, index) => {
-    //creating the HTML for each card
+    const isOutOfStock = item.stock === 0;
+
+    const buttonClass = isOutOfStock ? "btn-secondary" : "btn-dark";
+    const buttonText = isOutOfStock ? "Out of Stock" : "Add to Cart";
+    const disabledAttr = isOutOfStock ? "disabled" : "";
     htmlContent += `
       <div class="col">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100 shadow-sm ${isOutOfStock ? "opacity-75" : ""}">
           <div class="card-body text-center">
             <h5 class="card-title">${item.name}</h5>
-            <p class="text-muted small mb-2">In Stock: ${item.stock}</p>
+            <p class="small mb-2 ${isOutOfStock ? "text-danger fw-bold" : "text-muted"}">
+                ${isOutOfStock ? "Sold Out" : "In Stock: " + item.stock}
+            </p>
             <p class="card-text text-primary fw-bold">${item.price}£</p>
-            <button onclick="addToCart(${index})" class="btn btn-dark btn-sm w-100 mt-2">
-               Add to Cart
+            
+            <button onclick="addToCart(${index})" 
+                    class="btn ${buttonClass} btn-sm w-100 mt-2" 
+                    ${disabledAttr}>
+                ${buttonText}
             </button>
-               <button onclick="removeCart(${index})" class="btn btn-dark btn-sm w-100 mt-2">
-               Remove From Cart
+
+            <button onclick="removeCart(${index})" class="btn btn-outline-danger btn-sm w-100 mt-2">
+                Remove
             </button>
           </div>
         </div>
@@ -48,6 +58,7 @@ function addToCart(index) {
     cartTotal += inventory[index].price;
     totalBillDisplay.innerText = cartTotal.toFixed(2) + "£";
     displayProducts();
+    updateSummary();
   }
 }
 
@@ -57,7 +68,40 @@ function removeCart(index) {
   );
 
   if (itemonCartIndex !== -1) {
+    cart.splice(itemonCartIndex, 1);
+    inventory[index].stock += 1;
+    cartTotal -= inventory[index].price;
+
+    totalBillDisplay.innerText = cartTotal.toFixed(2) + "£";
+    displayProducts();
+    updateSummary();
+  } else {
+    alert("This item is not in your cart!");
   }
+}
+
+function updateSummary() {
+  const summaryElement = document.getElementById("cart-summary");
+  if (cart.length === 0) {
+    summaryElement.innerHTML = `<li class="list-group-item text-muted">Your cart is empty</li>`;
+    return;
+  }
+
+  const counts = {};
+  cart.forEach((item) => {
+    counts[item.name] = (counts[item.name] || 0) + 1;
+  });
+
+  let summaryHTML = "";
+  for (const name in counts) {
+    summaryHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${name}
+                <span class="badge bg-primary rounded-pill">x${counts[name]}</span>
+            </li>
+        `;
+  }
+  summaryElement.innerHTML = summaryHTML;
 }
 
 displayProducts();
